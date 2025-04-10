@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>מחולל פסקול חיים</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      padding: 20px;
+      direction: rtl;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+    form div {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    textarea, input[type="text"], select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    textarea {
+      resize: vertical;
+      height: 80px;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      font-weight: normal;
+    }
+    .checkbox-group input {
+      margin-left: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #007BFF;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #result {
+      margin-top: 30px;
+      padding: 20px;
+      border-top: 1px solid #ddd;
+    }
+    #songList {
+      list-style: none;
+      padding: 0;
+    }
+    #songList li {
+      margin: 5px 0;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+    }
+    a {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      text-decoration: none;
+      color: #007BFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>מחולל פסקול החיים</h1>
+    <p style="text-align:center;">כתוב רגע קטן – וקבל פסקול גדול</p>
+    
+    <form id="playlistForm">
+      <div>
+        <label for="moodText">מה עובר עליך כרגע?</label>
+        <textarea id="moodText" required placeholder="תאר לנו בכמה מילים, לדוגמה: 'חזרתי מערב עם חברים והרגשתי בדידות'"></textarea>
+      </div>
+      
+      <div>
+        <label>מה היית רוצה להרגיש?</label>
+        <div class="checkbox-group">
+          <label>שמחה <input type="checkbox" name="feeling" value="שמחה"></label>
+          <label>רגיעה <input type="checkbox" name="feeling" value="רגיעה"></label>
+          <label>נוסטלגיה <input type="checkbox" name="feeling" value="נוסטלגיה"></label>
+          <label>אנרגיות <input type="checkbox" name="feeling" value="אנרגיות"></label>
+          <label>השראה <input type="checkbox" name="feeling" value="השראה"></label>
+          <label>מפתיע <input type="checkbox" name="feeling" value="מפתיע"></label>
+        </div>
+      </div>
+      
+      <div>
+        <label for="musicStyle">סגנון מוזיקה מועדף:</label>
+        <select id="musicStyle">
+          <option value="any">לא משנה לי</option>
+          <option value="pop">פופ</option>
+          <option value="rock">רוק</option>
+          <option value="indie">אינדי</option>
+          <option value="electronic">אלקטרוני</option>
+          <option value="israeli">ישראלי</option>
+        </select>
+      </div>
+      
+      <div>
+        <label for="relatedMoments">רגעים דומים? (אופציונלי)</label>
+        <input type="text" id="relatedMoments" placeholder="לדוגמה: 'מסיבת סיום תיכון' או 'טיול שנתי'">
+      </div>
+      
+      <div>
+        <button type="submit">צור לי פסקול 🎶</button>
+      </div>
+    </form>
+    
+    <div id="result" style="display:none;">
+      <h2>הפסקול שלך:</h2>
+      <p id="playlistDescription"></p>
+      <ul id="songList"></ul>
+      <a href="#" target="_blank" id="listenLink">האזן ב-Spotify</a>
+    </div>
+  </div>
+
+  <script>
+    const WEBHOOK_URL = "https://your-webhook-endpoint.com/receive";
+
+    async function generatePlaylist(data) {
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          throw new Error("Error in response");
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error:", error);
+        return {
+          description: "אירעה שגיאה בעת עיבוד הבקשה, נסה שוב מאוחר יותר.",
+          songs: [],
+          spotifyLink: "#"
+        };
+      }
+    }
+
+    document.getElementById('playlistForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      
+      const moodText = document.getElementById('moodText').value;
+      const feelingElements = document.querySelectorAll('input[name="feeling"]:checked');
+      const feelings = Array.from(feelingElements).map(elem => elem.value);
+      const musicStyle = document.getElementById('musicStyle').value;
+      const relatedMoments = document.getElementById('relatedMoments').value;
+      
+      const payload = {
+        moodText: moodText,
+        feelings: feelings,
+        musicStyle: musicStyle,
+        relatedMoments: relatedMoments
+      };
+      
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('playlistDescription').innerText = 'מחפש את הפסקול המושלם...';
+      document.getElementById('songList').innerHTML = '';
+      document.getElementById('listenLink').href = '#';
+      
+      const result = await generatePlaylist(payload);
+      
+      document.getElementById('playlistDescription').innerText = result.description;
+      const songList = document.getElementById('songList');
+      songList.innerHTML = '';
+      result.songs.forEach(song => {
+        const li = document.createElement('li');
+        li.innerText = song;
+        songList.appendChild(li);
+      });
+      document.getElementById('listenLink').href = result.spotifyLink;
+    });
+  </script>
+</body>
+</html>
